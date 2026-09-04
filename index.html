@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#12212B">
+<title>Letters</title>
+<style>
+  :root{
+    --ground:#12212B; --panel:#182C38; --line:#2A4351; --paper:#EDE6D8;
+    --muted:#7C93A0; --brass:#E0A458; --sage:#9CC69B; --clay:#E4907B;
+    --serif: Georgia, "Iowan Old Style", "Palatino Linotype", Palatino, "Times New Roman", serif;
+    --sans: ui-sans-serif, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{background:var(--ground);color:var(--paper);font-family:var(--sans);font-size:16px;
+    line-height:1.5;-webkit-text-size-adjust:100%;min-height:100dvh}
+  .wrap{max-width:46rem;margin:0 auto;padding:1.5rem 1.25rem calc(3rem + env(safe-area-inset-bottom))}
+  h1{font-family:var(--serif);font-weight:400;font-size:1.9rem;margin:.5rem 0 .25rem}
+  .lede{color:var(--muted);margin:0 0 2.25rem;max-width:34rem}
+  fieldset{border:0;padding:0;margin:0 0 2rem}
+  legend{font-family:var(--serif);font-size:1.05rem;padding:0;margin-bottom:.7rem}
+  .hint{color:var(--muted);font-size:.85rem;margin:.55rem 0 0}
+  .chips{display:flex;flex-wrap:wrap;gap:.5rem}
+  .chip{font:inherit;font-size:.95rem;color:var(--paper);background:transparent;
+    border:1px solid var(--line);border-radius:2px;padding:.45rem .85rem;cursor:pointer;
+    transition:border-color .12s,background .12s,color .12s}
+  .chip:hover{border-color:var(--muted)}
+  .chip[aria-pressed="true"],.chip[aria-checked="true"]{background:var(--brass);border-color:var(--brass);color:#17242C}
+  .start{font-family:var(--serif);font-size:1.15rem;background:transparent;color:var(--paper);
+    border:1px solid var(--paper);border-radius:2px;padding:.6rem 1.6rem;cursor:pointer;
+    transition:background .12s,color .12s}
+  .start:hover:not(:disabled){background:var(--paper);color:var(--ground)}
+  .start:disabled{opacity:.35;cursor:not-allowed}
+  .warn{color:var(--clay);font-size:.9rem;min-height:1.3rem;margin:.75rem 0 0}
+  :focus-visible{outline:2px solid var(--brass);outline-offset:2px}
+  input[type=text]{width:100%;font-family:var(--serif);font-size:1.35rem;color:var(--paper);
+    background:transparent;border:0;border-bottom:1px solid var(--line);border-radius:0;
+    padding:.4rem 0;caret-color:var(--brass)}
+  input[type=text]:focus{outline:0;border-bottom-color:var(--brass)}
+  input.numbox{width:5.5rem;font-size:1.2rem;text-align:center;border:0;border-bottom:1px solid var(--line)}
+  input.numbox.bad{border-bottom-color:var(--clay)}
+  textarea{width:100%;font-family:var(--serif);font-size:1.15rem;line-height:1.6;color:var(--paper);
+    background:transparent;border:1px solid var(--line);border-radius:2px;padding:.6rem .7rem;
+    resize:vertical;caret-color:var(--brass)}
+  textarea:focus{outline:0;border-color:var(--brass)}
+  .tally{font-size:.85rem;color:var(--muted);margin:.5rem 0 0;min-height:1.3rem}
+  .tally b{color:var(--paper);font-weight:600}
+  .tally .bad{color:var(--clay)}
+  .pts{color:var(--brass);font-variant-numeric:tabular-nums}
+  .bar{height:2px;background:var(--line);margin-bottom:.75rem}
+  .bar>i{display:block;height:100%;background:var(--brass);width:0;transition:width .25s ease}
+  .status{display:flex;justify-content:space-between;align-items:baseline;color:var(--muted);
+    font-size:.85rem;margin-bottom:2.5rem}
+  .status button{font:inherit;font-size:.85rem;background:none;border:0;color:var(--muted);
+    cursor:pointer;padding:0;text-decoration:underline;text-underline-offset:3px}
+  .status button:hover{color:var(--paper)}
+  .prompt{font-family:var(--serif);font-size:clamp(1.5rem,5.4vw,2.2rem);line-height:1.25;margin:0 0 .4rem}
+  .prompt.turn{animation:turn .18s ease}
+  @keyframes turn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+  .caution{color:var(--brass);font-size:.9rem;margin:0 0 1rem;min-height:1.2rem}
+  .doing{display:flex;gap:.75rem;align-items:center;margin-top:.9rem;flex-wrap:wrap}
+  .act{font:inherit;font-size:.9rem;background:transparent;color:var(--muted);border:1px solid var(--line);
+    border-radius:2px;padding:.4rem 1rem;cursor:pointer}
+  .act:hover{color:var(--paper);border-color:var(--muted)}
+  .act.primary{color:var(--brass);border-color:var(--brass)}
+  .act:disabled{opacity:.4;cursor:not-allowed}
+  .feed{list-style:none;margin:2.25rem 0 0;padding:0}
+  .feed li{border-top:1px solid var(--line);padding:.7rem 0;font-size:.95rem;animation:rise .18s ease}
+  @keyframes rise{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:none}}
+  .feed li:nth-child(n+5){opacity:.5}
+  .feed li:nth-child(n+8){display:none}
+  .feed li.cycle{color:var(--brass);font-style:italic}
+  .verdict{font-weight:600}
+  .ok .verdict{color:var(--sage)}
+  .no .verdict{color:var(--clay)}
+  .aside{color:var(--muted)}
+  .score{font-family:var(--serif);font-size:clamp(1.5rem,5vw,2.1rem);line-height:1.3;margin:0 0 .5rem;max-width:26rem}
+  table{border-collapse:collapse;width:100%;margin:.75rem 0 2rem;font-size:.95rem}
+  th{text-align:left;font-weight:400;color:var(--muted);font-size:.85rem;border-bottom:1px solid var(--line);padding:0 .75rem .4rem 0}
+  td{border-bottom:1px solid var(--line);padding:.55rem .75rem .55rem 0;vertical-align:top}
+  td.n{color:var(--muted);text-align:right;padding-right:0;white-space:nowrap}
+  .actions{display:flex;flex-wrap:wrap;gap:.75rem}
+  [hidden]{display:none !important}
+  @media (prefers-reduced-motion:reduce){*{animation:none !important;transition:none !important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<section id="setup">
+  <h1>Letters</h1>
+  <p class="lede">You get a letter. Name every country that starts with it.</p>
+
+  <fieldset>
+    <legend>Mode</legend>
+    <div class="chips" id="mode">
+      <button class="chip" type="button" role="radio" data-v="normal" aria-checked="true">Normal</button>
+      <button class="chip" type="button" role="radio" data-v="expert" aria-checked="false">Expert</button>
+    </div>
+    <p class="hint" id="modeHint"></p>
+  </fieldset>
+
+  <fieldset>
+    <legend>Order</legend>
+    <div class="chips" id="order">
+      <button class="chip" type="button" role="radio" data-v="random" aria-checked="true">Random</button>
+      <button class="chip" type="button" role="radio" data-v="az" aria-checked="false">A to Z</button>
+      <button class="chip" type="button" role="radio" data-v="za" aria-checked="false">Z to A</button>
+    </div>
+    <p class="hint" id="orderHint"></p>
+  </fieldset>
+
+  <fieldset>
+    <legend>Where in the world</legend>
+    <div class="chips" id="regions"></div>
+    <p class="hint" id="poolCount"></p>
+  </fieldset>
+
+  <fieldset>
+    <legend>How many questions</legend>
+    <input id="count" class="numbox" type="text" inputmode="numeric" autocomplete="off" spellcheck="false" value="10">
+    <p class="hint">A repeat counts as a question. Up to 200.</p>
+  </fieldset>
+
+  <p class="hint" style="margin:-1rem 0 1.75rem">A leading &ldquo;The&rdquo; is ignored throughout, so a country
+     whose name starts with it is filed under the word after. Only a country&rsquo;s current name is accepted &mdash; Burma, Holland
+     and Swaziland are marked wrong, though the round tells you what they were.</p>
+
+  <button class="start" id="startBtn" type="button">Start round</button>
+  <p class="warn" id="warn"></p>
+</section>
+
+<section id="quiz" hidden>
+  <div class="bar"><i id="fill"></i></div>
+  <div class="status">
+    <span id="counter"></span>
+    <button type="button" id="quitBtn">End round</button>
+  </div>
+  <p class="prompt" id="prompt"></p>
+  <p class="caution" id="caution"></p>
+  <label for="answer" style="position:absolute;left:-9999px">Countries, separated by commas</label>
+  <textarea id="answer" rows="5" autocomplete="off" autocorrect="off" autocapitalize="off"
+            spellcheck="false" placeholder="Spain, Sweden, Switzerland&#10;one per line or separated by commas"></textarea>
+  <p class="tally" id="tally"></p>
+  <div class="doing">
+    <button class="act primary" type="button" id="actBtn">Submit</button>
+    <span class="hint" id="actHint" style="margin:0"></span>
+  </div>
+  <ul class="feed" id="feed"></ul>
+</section>
+
+<section id="results" hidden>
+  <p class="score" id="score"></p>
+  <p class="lede" id="scoreSub"></p>
+  <div id="missedBlock" hidden>
+    <table>
+      <thead><tr><th>Letter</th><th>What you didn't get</th><th class="n">Score</th></tr></thead>
+      <tbody id="missedBody"></tbody>
+    </table>
+  </div>
+  <div class="actions">
+    <button class="start" id="againBtn" type="button">Same settings again</button>
+    <button class="start" id="missedBtn" type="button" hidden>Drill the ones I missed</button>
+    <button class="start" id="setupBtn" type="button">Change settings</button>
+  </div>
+</section>
+
+</div>
+<script>
+"use strict";
+const C={AFG:["Afghanistan","as"],AGO:["Angola","af"],ALB:["Albania","eu"],AND:["Andorra","eu"],ARE:["United Arab Emirates","as"],ARG:["Argentina","sa"],ARM:["Armenia","as"],ATG:["Antigua and Barbuda","na"],AUS:["Australia","oc"],AUT:["Austria","eu"],AZE:["Azerbaijan","aseu"],BDI:["Burundi","af"],BEL:["Belgium","eu"],BEN:["Benin","af"],BFA:["Burkina Faso","af"],BGD:["Bangladesh","as"],BGR:["Bulgaria","eu"],BHR:["Bahrain","as"],BHS:["The Bahamas","na"],BIH:["Bosnia and Herzegovina","eu"],BLR:["Belarus","eu"],BLZ:["Belize","na"],BOL:["Bolivia","sa"],BRA:["Brazil","sa"],BRB:["Barbados","na"],BRN:["Brunei","as"],BTN:["Bhutan","as"],BWA:["Botswana","af"],CAF:["Central African Republic","af"],CAN:["Canada","na"],CHE:["Switzerland","eu"],CHL:["Chile","sa"],CHN:["China","as"],CIV:["Côte d'Ivoire","af"],CMR:["Cameroon","af"],COD:["Democratic Republic of the Congo","af"],COG:["Republic of the Congo","af"],COL:["Colombia","sa"],COM:["Comoros","af"],CPV:["Cabo Verde","af"],CRI:["Costa Rica","na"],CUB:["Cuba","na"],CYP:["Cyprus","aseu"],CZE:["Czechia","eu"],DEU:["Germany","eu"],DJI:["Djibouti","af"],DMA:["Dominica","na"],DNK:["Denmark","eu"],DOM:["Dominican Republic","na"],DZA:["Algeria","af"],ECU:["Ecuador","sa"],EGY:["Egypt","af"],ERI:["Eritrea","af"],ESP:["Spain","eu"],EST:["Estonia","eu"],ETH:["Ethiopia","af"],FIN:["Finland","eu"],FJI:["Fiji","oc"],FRA:["France","eu"],FSM:["Micronesia","oc"],GAB:["Gabon","af"],GBR:["United Kingdom","eu"],GEO:["Georgia","aseu"],GHA:["Ghana","af"],GIN:["Guinea","af"],GMB:["The Gambia","af"],GNB:["Guinea-Bissau","af"],GNQ:["Equatorial Guinea","af"],GRC:["Greece","eu"],GRD:["Grenada","na"],GTM:["Guatemala","na"],GUY:["Guyana","sa"],HND:["Honduras","na"],HRV:["Croatia","eu"],HTI:["Haiti","na"],HUN:["Hungary","eu"],IDN:["Indonesia","as"],IND:["India","as"],IRL:["Ireland","eu"],IRN:["Iran","as"],IRQ:["Iraq","as"],ISL:["Iceland","eu"],ISR:["Israel","as"],ITA:["Italy","eu"],JAM:["Jamaica","na"],JOR:["Jordan","as"],JPN:["Japan","as"],KAZ:["Kazakhstan","aseu"],KEN:["Kenya","af"],KGZ:["Kyrgyzstan","as"],KHM:["Cambodia","as"],KIR:["Kiribati","oc"],KNA:["Saint Kitts and Nevis","na"],KOR:["South Korea","as"],KWT:["Kuwait","as"],LAO:["Laos","as"],LBN:["Lebanon","as"],LBR:["Liberia","af"],LBY:["Libya","af"],LCA:["Saint Lucia","na"],LIE:["Liechtenstein","eu"],LKA:["Sri Lanka","as"],LSO:["Lesotho","af"],LTU:["Lithuania","eu"],LUX:["Luxembourg","eu"],LVA:["Latvia","eu"],MAR:["Morocco","af"],MCO:["Monaco","eu"],MDA:["Moldova","eu"],MDG:["Madagascar","af"],MDV:["Maldives","as"],MEX:["Mexico","na"],MHL:["Marshall Islands","oc"],MKD:["North Macedonia","eu"],MLI:["Mali","af"],MLT:["Malta","eu"],MMR:["Myanmar","as"],MNE:["Montenegro","eu"],MNG:["Mongolia","as"],MOZ:["Mozambique","af"],MRT:["Mauritania","af"],MUS:["Mauritius","af"],MWI:["Malawi","af"],MYS:["Malaysia","as"],NAM:["Namibia","af"],NER:["Niger","af"],NGA:["Nigeria","af"],NIC:["Nicaragua","na"],NLD:["Netherlands","eu"],NOR:["Norway","eu"],NPL:["Nepal","as"],NRU:["Nauru","oc"],NZL:["New Zealand","oc"],OMN:["Oman","as"],PAK:["Pakistan","as"],PAN:["Panama","na"],PER:["Peru","sa"],PHL:["Philippines","as"],PLW:["Palau","oc"],PNG:["Papua New Guinea","oc"],POL:["Poland","eu"],PRK:["North Korea","as"],PRT:["Portugal","eu"],PRY:["Paraguay","sa"],PSE:["Palestine","as"],QAT:["Qatar","as"],ROU:["Romania","eu"],RUS:["Russia","aseu"],RWA:["Rwanda","af"],SAU:["Saudi Arabia","as"],SDN:["Sudan","af"],SEN:["Senegal","af"],SGP:["Singapore","as"],SLB:["Solomon Islands","oc"],SLE:["Sierra Leone","af"],SLV:["El Salvador","na"],SMR:["San Marino","eu"],SOM:["Somalia","af"],SRB:["Serbia","eu"],SSD:["South Sudan","af"],STP:["São Tomé and Príncipe","af"],SUR:["Suriname","sa"],SVK:["Slovakia","eu"],SVN:["Slovenia","eu"],SWE:["Sweden","eu"],SWZ:["Eswatini","af"],SYC:["Seychelles","af"],SYR:["Syria","as"],TCD:["Chad","af"],TGO:["Togo","af"],THA:["Thailand","as"],TJK:["Tajikistan","as"],TKM:["Turkmenistan","as"],TLS:["Timor-Leste","as"],TON:["Tonga","oc"],TTO:["Trinidad and Tobago","na"],TUN:["Tunisia","af"],TUR:["Turkey","aseu"],TUV:["Tuvalu","oc"],TWN:["Taiwan","as"],TZA:["Tanzania","af"],UGA:["Uganda","af"],UKR:["Ukraine","eu"],URY:["Uruguay","sa"],USA:["United States","na"],UZB:["Uzbekistan","as"],VAT:["Vatican City","eu"],VCT:["Saint Vincent and the Grenadines","na"],VEN:["Venezuela","sa"],VNM:["Vietnam","as"],VUT:["Vanuatu","oc"],WSM:["Samoa","oc"],XKX:["Kosovo","eu"],YEM:["Yemen","as"],ZAF:["South Africa","af"],ZMB:["Zambia","af"],ZWE:["Zimbabwe","af"]};
+const ALIAS={"shqiperia":["Shqiperia","ALB"],"emirates":["Emirates","ARE"],"uae":["UAE","ARE"],"hayastan":["Hayastan","ARM"],"antigua":["Antigua","ATG"],"oz":["Oz","AUS"],"oesterreich":["Oesterreich","AUT"],"osterreich":["Osterreich","AUT"],"belgie":["Belgie","BEL"],"belgique":["Belgique","BEL"],"bih":["BiH","BIH"],"bosnia":["Bosnia","BIH"],"bosnia herzegovina":["Bosnia Herzegovina","BIH"],"belorussia":["Belorussia","BLR"],"byelorussia":["Byelorussia","BLR"],"white russia":["White Russia","BLR"],"car":["CAR","CAF"],"suisse":["Suisse","CHE"],"prc":["PRC","CHN"],"people s republic of china":["People's Republic of China","CHN"],"ivory coast":["Ivory Coast","CIV"],"congo dr":["Congo DR","COD"],"congo kinshasa":["Congo-Kinshasa","COD"],"dr congo":["DR Congo","COD"],"dr of the congo":["DR of the Congo","COD"],"drc":["DRC","COD"],"democratic republic of congo":["Democratic Republic of Congo","COD"],"zaire":["Zaire","COD"],"congo republic":["Congo Republic","COG"],"congo brazzaville":["Congo-Brazzaville","COG"],"republic of congo":["Republic of Congo","COG"],"cape verde":["Cape Verde","CPV"],"cesko":["Cesko","CZE"],"czech":["Czech","CZE"],"czech republic":["Czech Republic","CZE"],"brd":["BRD","DEU"],"deutschland":["Deutschland","DEU"],"federal republic of germany":["Federal Republic of Germany","DEU"],"greenland":["Greenland","DNK"],"misr":["Misr","EGY"],"espana":["Espana","ESP"],"suomi":["Suomi","FIN"],"french guiana":["French Guiana","FRA"],"federated states of micronesia":["Federated States of Micronesia","FSM"],"britain":["Britain","GBR"],"england":["England","GBR"],"gibraltar":["Gibraltar","GBR"],"great britain":["Great Britain","GBR"],"northern ireland":["Northern Ireland","GBR"],"scotland":["Scotland","GBR"],"uk":["UK","GBR"],"united kingdom of great britain and northern ireland":["United Kingdom of Great Britain and Northern Ireland","GBR"],"wales":["Wales","GBR"],"sakartvelo":["Sakartvelo","GEO"],"bissau":["Bissau","GNB"],"eq guinea":["Eq Guinea","GNQ"],"ellada":["Ellada","GRC"],"hellas":["Hellas","GRC"],"hrvatska":["Hrvatska","HRV"],"magyarorszag":["Magyarorszag","HUN"],"eire":["Eire","IRL"],"republic of ireland":["Republic of Ireland","IRL"],"islamic republic of iran":["Islamic Republic of Iran","IRN"],"persia":["Persia","IRN"],"italia":["Italia","ITA"],"nihon":["Nihon","JPN"],"nippon":["Nippon","JPN"],"kazakstan":["Kazakstan","KAZ"],"kirghizia":["Kirghizia","KGZ"],"kirghizstan":["Kirghizstan","KGZ"],"kyrgyz republic":["Kyrgyz Republic","KGZ"],"kampuchea":["Kampuchea","KHM"],"saint kitts":["St Kitts","KNA"],"korea republic":["Korea Republic","KOR"],"korea south":["Korea South","KOR"],"rok":["ROK","KOR"],"republic of korea":["Republic of Korea","KOR"],"lao pdr":["Lao PDR","LAO"],"lao peoples democratic republic":["Lao Peoples Democratic Republic","LAO"],"ceylon":["Ceylon","LKA"],"al maghrib":["Al Maghrib","MAR"],"moldavia":["Moldavia","MDA"],"republic of moldova":["Republic of Moldova","MDA"],"estados unidos mexicanos":["Estados Unidos Mexicanos","MEX"],"fyrom":["FYROM","MKD"],"former yugoslav republic of macedonia":["Former Yugoslav Republic of Macedonia","MKD"],"macedonia":["Macedonia","MKD"],"burma":["Burma","MMR"],"union of myanmar":["Union of Myanmar","MMR"],"crna gora":["Crna Gora","MNE"],"holland":["Holland","NLD"],"nederland":["Nederland","NLD"],"norge":["Norge","NOR"],"nz":["NZ","NZL"],"papua":["Papua","PNG"],"polska":["Polska","POL"],"dprk":["DPRK","PRK"],"democratic peoples republic of korea":["Democratic Peoples Republic of Korea","PRK"],"korea north":["Korea North","PRK"],"gaza":["Gaza","PSE"],"palestinian territories":["Palestinian Territories","PSE"],"west bank":["West Bank","PSE"],"katar":["Katar","QAT"],"roumania":["Roumania","ROU"],"rumania":["Rumania","ROU"],"russian federation":["Russian Federation","RUS"],"ksa":["KSA","SAU"],"kingdom of saudi arabia":["Kingdom of Saudi Arabia","SAU"],"srbija":["Srbija","SRB"],"s sudan":["S Sudan","SSD"],"sao tome":["Sao Tome","STP"],"slovak republic":["Slovak Republic","SVK"],"sverige":["Sverige","SWE"],"kingdom of eswatini":["Kingdom of Eswatini","SWZ"],"swaziland":["Swaziland","SWZ"],"syrian arab republic":["Syrian Arab Republic","SYR"],"siam":["Siam","THA"],"east timor":["East Timor","TLS"],"trinidad":["Trinidad","TTO"],"turkiye":["Turkiye","TUR"],"chinese taipei":["Chinese Taipei","TWN"],"formosa":["Formosa","TWN"],"republic of china":["Republic of China","TWN"],"united republic of tanzania":["United Republic of Tanzania","TZA"],"america":["America","USA"],"us":["US","USA"],"usa":["USA","USA"],"united states of america":["United States of America","USA"],"holy see":["Holy See","VAT"],"vatican":["Vatican","VAT"],"saint vincent":["St Vincent","VCT"],"viet nam":["Viet Nam","VNM"],"rsa":["RSA","ZAF"],"congo":["Congo","COG"],"korea":["Korea","KOR"]};
+
+
+const REGIONS=[["af","Africa"],["na","North America"],["sa","South America"],
+               ["eu","Europe"],["as","Asia"],["oc","Oceania"]];
+const CODES=Object.keys(C);
+const ALPHA="ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("");
+const nameOf=c=>C[c][0];
+const regsOf=c=>C[c][1].match(/../g)||[];
+
+/* ---------- strict name matching, canonical names only ---------- */
+function norm(s){
+  return s.normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase()
+    .replace(/&/g," and ").replace(/[^a-z0-9]+/g," ").replace(/\bst\b/g,"saint")
+    .replace(/^the\s+/,"").replace(/\s+/g," ").trim();
+}
+const CANON=new Map();
+for(const c of CODES){ CANON.set(norm(nameOf(c)),c); CANON.set(norm(nameOf(c)).replace(/ /g,""),c); }
+const letterOf=c=>norm(nameOf(c))[0].toUpperCase();
+
+// a guess is one of: a real country, a known old/alternative name, or nothing at all
+function resolve(raw){
+  const g=norm(raw), gs=g.replace(/ /g,"");
+  if(!gs) return null;
+  const c=CANON.get(g)||CANON.get(gs);
+  if(c) return {kind:"country", code:c};
+  const a=ALIAS[g]||ALIAS[gs];
+  if(a) return {kind:"alias", shown:a[0], code:a[1]};
+  return {kind:"unknown", raw};
+}
+function parse(text){
+  const seen=new Set(), hits=[], unknown=[];
+  for(const raw of text.split(/[,;\n]+/)){
+    const t=raw.trim(); if(!t) continue;
+    const r=resolve(t);
+    if(!r) continue;
+    if(r.kind==="unknown"){
+      if(!unknown.some(u=>u.toLowerCase()===t.toLowerCase())) unknown.push(t);
+    }else{
+      const k=r.kind+":"+r.code;
+      if(!seen.has(k)){ seen.add(k); hits.push(r); }
+    }
+  }
+  return {hits,unknown};
+}
+
+/* ---------- state ---------- */
+const $=id=>document.getElementById(id);
+const MAX_Q=200;
+const settings={regions:new Set(REGIONS.map(r=>r[0])), mode:"normal", order:"random"};
+let queue=[],record=new Map();
+let answers=0,clean=0,points=0,available=0,qLimit=0,cycles=1,recycle=true,armed=false,startedAt=0;
+
+const MODE_TEXT={
+  normal:"You're told how many to name, and that number caps what you can submit. Letters with no countries are skipped.",
+  expert:"No count given, and every wrong answer costs a point. All 26 letters are in play \u2014 two of them have no countries at all."
+};
+const ORDER_TEXT={
+  random:"Letters come up in a random order, and any you don't finish cleanly come back a few questions later.",
+  az:"Straight through the alphabet from A. Nothing is repeated, so a letter you fluff is gone.",
+  za:"Straight through the alphabet from Z backwards. Nothing is repeated."
+};
+
+const answersFor = L => CODES.filter(c => letterOf(c)===L && regsOf(c).some(r=>settings.regions.has(r)));
+function poolFor(){
+  return ALPHA.filter(L => settings.mode==="expert" || answersFor(L).length>0);
+}
+function refreshPool(){
+  const n=poolFor().length, tot=CODES.filter(c=>regsOf(c).some(r=>settings.regions.has(r))).length;
+  $("poolCount").textContent = !settings.regions.size ? "Pick at least one region."
+    : n+" letters in play, covering "+tot+" countries"+(n<5?"  \u2014 a short round will repeat them.":"");
+  $("startBtn").disabled = settings.regions.size===0;
+  $("modeHint").textContent=MODE_TEXT[settings.mode];
+  $("orderHint").textContent=ORDER_TEXT[settings.order];
+  if(settings.order!=="random") $("count").value=String(n);
+  $("warn").textContent="";
+}
+REGIONS.forEach(([code,label])=>{
+  const b=document.createElement("button");
+  b.type="button"; b.className="chip"; b.textContent=label;
+  b.setAttribute("aria-pressed",settings.regions.has(code));
+  b.onclick=()=>{ settings.regions.has(code)?settings.regions.delete(code):settings.regions.add(code);
+    b.setAttribute("aria-pressed",settings.regions.has(code)); refreshPool(); };
+  $("regions").appendChild(b);
+});
+[["mode","mode"],["order","order"]].forEach(([id,key])=>{
+  [...$(id).children].forEach(b=>{
+    b.onclick=()=>{ settings[key]=b.dataset.v;
+      [...$(id).children].forEach(c=>c.setAttribute("aria-checked",c===b)); refreshPool(); };
+  });
+});
+refreshPool();
+
+/* ---------- round ---------- */
+const shuffle=a=>{const r=a.slice();for(let i=r.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[r[i],r[j]]=[r[j],r[i]];}return r;};
+const show=w=>["setup","quiz","results"].forEach(id=>$(id).hidden=(id!==w));
+const esc=s=>s.replace(/[&<>]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[c]));
+const listOf=cs=>cs.map(c=>esc(nameOf(c))).sort().join(", ");
+const worth=L=>Math.max(1,answersFor(L).length);
+
+function regionPhrase(){
+  if(settings.regions.size===REGIONS.length) return "";
+  const names=REGIONS.filter(r=>settings.regions.has(r[0])).map(r=>r[1]);
+  return " in "+(names.length===1?names[0]:names.slice(0,-1).join(", ")+" or "+names[names.length-1]);
+}
+function startRound(list,limit,canRecycle){
+  queue=list.slice(); qLimit=limit; recycle=canRecycle; cycles=1;
+  record=new Map(list.map(L=>[L,{L,asked:0,clean:false,best:0,wrong:0,pts:0,left:[],bad:[]}]));
+  answers=0; clean=0; points=0; available=0; startedAt=Date.now(); $("feed").innerHTML="";
+  show("quiz"); ask(); $("answer").focus();
+}
+function readCount(){
+  const raw=$("count").value.trim();
+  if(!/^\d+$/.test(raw)) return {err:"That needs to be a whole number of questions."};
+  const n=parseInt(raw,10);
+  if(n<1) return {err:"Ask for at least one question."};
+  if(n>MAX_Q) return {err:MAX_Q+" is the most questions a round can hold. Pick a smaller number."};
+  return {n};
+}
+function beginFromSettings(){
+  if(!settings.regions.size){ $("warn").textContent="Pick at least one region."; return; }
+  const c=readCount();
+  $("count").classList.toggle("bad",!!c.err);
+  if(c.err){ $("warn").textContent=c.err; $("count").focus(); $("count").select(); return; }
+  $("warn").textContent="";
+  let pool=poolFor();
+  if(settings.order==="za") pool=pool.slice().reverse();
+  else if(settings.order==="random") pool=shuffle(pool);
+  // alphabetical runs are a fixed march: nothing gets requeued out of order
+  startRound(pool.slice(0,Math.min(c.n,pool.length)), c.n, true);
+}
+function refill(){
+  cycles++;
+  let pool=poolFor();
+  if(settings.order==="za") pool=pool.slice().reverse();
+  else if(settings.order==="random") pool=shuffle(pool);
+  queue=pool.filter(L=>record.has(L));
+  const li=document.createElement("li"); li.className="cycle";
+  li.textContent="Ran out of letters. Starting the sequence again."; $("feed").prepend(li);
+}
+function ask(){
+  const L=queue[0], all=answersFor(L), p=$("prompt");
+  if(settings.mode==="normal"){
+    p.textContent = all.length===1
+      ? "Name the country"+regionPhrase()+" beginning with "+L
+      : "Name the "+all.length+" countries"+regionPhrase()+" beginning with "+L;
+  }else{
+    p.textContent = "Which countries"+regionPhrase()+" begin with "+L+"?";
+  }
+  p.classList.remove("turn"); void p.offsetWidth; p.classList.add("turn");
+  $("caution").textContent = L==="T"
+    ? "A leading \u201cThe\u201d doesn't count \u2014 a country whose name starts with it is filed under the word after."
+    : "";
+  $("answer").value=""; armed=false;
+  $("actHint").textContent = settings.mode==="expert"
+    ? "submit an empty box if no country starts with this letter"
+    : "submit an empty box to give up on this one";
+  retally(); tick();
+}
+function retally(){
+  const {hits,unknown}=parse($("answer").value);
+  const cap = settings.mode==="normal" ? answersFor(queue[0]).length : null;
+  const bits=["<b>"+hits.length+"</b> "+(hits.length===1?"entry":"entries")];
+  if(cap!==null) bits.push("of "+cap+" allowed");
+  if(unknown.length){
+    const shown=unknown.slice(0,3).map(esc).join(", ");
+    bits.push('<span class="bad">not recognised: '+shown+(unknown.length>3?" and "+(unknown.length-3)+" more":"")+"</span>");
+  }
+  $("tally").innerHTML = $("answer").value.trim() ? bits.join("  \u00b7  ") : "";
+  const over = cap!==null && hits.length>cap;
+  $("actBtn").textContent = over ? "Too many" : (armed ? "Submit anyway" : "Submit");
+  $("actBtn").disabled = over;
+}
+function tick(){
+  $("fill").style.width=(answers/qLimit*100)+"%";
+  $("counter").innerHTML=answers+" of "+qLimit+" answered"
+    +(answers?'  \u00b7  <span class="pts">'+points+" of "+available+" points</span>":"");
+}
+function say(cls,verdict,rest){
+  const li=document.createElement("li"); li.className=cls;
+  li.innerHTML='<span class="verdict">'+verdict+'.</span> '+rest;
+  $("feed").prepend(li);
+}
+
+function submitAnswer(){
+  const L=queue[0], all=answersFor(L), rec=record.get(L);
+  const {hits,unknown}=parse($("answer").value);
+  if(settings.mode==="normal" && hits.length>all.length) return;
+  if(unknown.length && !armed){
+    armed=true; retally();
+    say("no","Hold on", unknown.length===1
+      ? "I don't know a country called "+esc(unknown[0])+". Fix it, or press submit again to send without it."
+      : unknown.length+" entries aren't countries I know. Fix them, or press submit again to send without them.");
+    return;
+  }
+  const right=[], wrongLetter=[], wrongRegion=[], oldName=[];
+  for(const h of hits){
+    if(h.kind==="alias"){ oldName.push(h); continue; }
+    if(all.includes(h.code)) right.push(h.code);
+    else if(letterOf(h.code)===L) wrongRegion.push(h.code);
+    else wrongLetter.push(h.code);
+  }
+  const wrongN=wrongLetter.length+wrongRegion.length+oldName.length;
+  const missed=all.filter(c=>!right.includes(c));
+  const isClean = !missed.length && !wrongN;
+  const earned = settings.mode==="expert"
+    ? (all.length===0 ? (wrongN?-wrongN:1) : right.length-wrongN)
+    : right.length;
+
+  rec.asked++; rec.best=Math.max(rec.best,right.length); rec.wrong=wrongN; rec.pts=earned;
+  rec.clean=isClean; rec.left=missed;
+  rec.bad=oldName.map(h=>h.shown+" \u2192 "+nameOf(h.code))
+        .concat(wrongRegion.map(c=>nameOf(c)), wrongLetter.map(c=>nameOf(c)));
+  answers++; points+=earned; available+=worth(L);
+  if(isClean) clean++;
+
+  const tail=[];
+  if(missed.length) tail.push("Missed "+listOf(missed)+".");
+  if(wrongLetter.length) tail.push(listOf(wrongLetter)+(wrongLetter.length===1?" doesn't":" don't")+" begin with "+L+".");
+  if(wrongRegion.length) tail.push(listOf(wrongRegion)+(wrongRegion.length===1?" begins":" begin")+" with "+L
+      +" but "+(wrongRegion.length===1?"isn't":"aren't")+regionPhrase().replace(" in "," in ")+".");
+  for(const h of oldName) tail.push(esc(h.shown)+" is an old or alternative name \u2014 "
+      +esc(nameOf(h.code))+" is what counts, filed under "+letterOf(h.code)+".");
+  tail.push('<span class="pts">'+(earned>=0?"+":"")+earned+"</span>");
+
+  if(isClean){
+    say("ok", all.length===0 ? "Right, nothing starts with "+L : "All "+all.length,
+      (all.length?listOf(right)+". ":"")+tail[tail.length-1]);
+    queue.shift();
+  }else{
+    say("no", right.length+" of "+all.length, tail.join(" "));
+    const e=queue.shift();
+    if(settings.order==="random") queue.splice(Math.min(3+Math.floor(Math.random()*3),queue.length),0,e);
+  }
+  if(answers>=qLimit) return finish();
+  if(!queue.length){ if(!recycle) return finish(); refill(); }
+  ask();
+}
+
+function finish(){
+  const asked=[...record.values()].filter(r=>r.asked>0);
+  const missed=asked.filter(r=>!r.clean).sort((a,b)=>a.pts-b.pts);
+  const mins=Math.round((Date.now()-startedAt)/60000);
+  const pct=available?Math.round(points/available*100):0;
+  $("score").textContent=points+" of "+available+" points, "+pct+"%.";
+  const bits=[clean+" of "+answers+(answers===1?" letter":" letters")+" fully clean."];
+  if(missed.length) bits.push("Here's what got away.");
+  if(cycles>1) bits.push("You went through the letters "+(cycles===2?"twice":cycles+" times")+".");
+  if(mins>=1) bits.push("Took about "+mins+(mins===1?" minute.":" minutes."));
+  $("scoreSub").textContent=bits.join(" ");
+  $("missedBlock").hidden=!missed.length; $("missedBtn").hidden=!missed.length;
+  $("missedBody").innerHTML=missed.map(r=>{
+    const parts=[];
+    if(r.left.length) parts.push(listOf(r.left));
+    if(r.bad.length) parts.push('<span class="aside">wrong: '+r.bad.map(esc).join(", ")+"</span>");
+    return "<tr><td>"+r.L+"</td><td>"+(parts.join("<br>")||"<span class='aside'>nothing</span>")
+      +"</td><td class='n'>"+r.best+" / "+answersFor(r.L).length+(r.wrong?"  \u2013"+r.wrong:"")+"</td></tr>";
+  }).join("");
+  window.__missed=missed.map(r=>r.L);
+  show("results");
+}
+
+$("startBtn").onclick=beginFromSettings;
+$("count").addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();beginFromSettings();}});
+$("count").addEventListener("input",()=>{$("count").classList.remove("bad");$("warn").textContent="";});
+$("answer").addEventListener("input",()=>{armed=false;retally();});
+$("answer").addEventListener("keydown",e=>{
+  if(e.key==="Enter"&&(e.metaKey||e.ctrlKey)){e.preventDefault();submitAnswer();}
+});
+$("actBtn").onclick=()=>{submitAnswer();$("answer").focus();};
+$("quitBtn").onclick=()=>{if(queue.length) finish();};
+$("againBtn").onclick=beginFromSettings;
+$("missedBtn").onclick=()=>{const m=window.__missed; if(m&&m.length) startRound(m,m.length*3,false);};
+$("setupBtn").onclick=()=>{show("setup");refreshPool();};
+</script>
+</body>
+</html>
